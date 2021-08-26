@@ -9,10 +9,8 @@ import android.location.Geocoder
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
-import androidx.navigation.fragment.findNavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -23,7 +21,6 @@ import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
-import com.udacity.project4.locationreminders.savereminder.SaveReminderFragmentDirections
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
@@ -55,6 +52,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        binding.btnSave.isEnabled = false
+        binding.btnSave.setOnClickListener { onLocationSelected() }
 
         return binding.root
     }
@@ -92,16 +92,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         else -> super.onOptionsItemSelected(item)
     }
 
-    private fun openDialogToConfirm() {
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.confirm_location)
-            .setPositiveButton(R.string.confirm) { _, _ ->
-                onLocationSelected()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
     private fun setMapLongClick(map: GoogleMap) {
         map.setOnMapClickListener { latLng ->
             val locationName =
@@ -109,7 +99,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .firstOrNull()
             Timber.d("LocationSelected = ${locationName.toString()}")
             val snippet = if (locationName != null && locationName.maxAddressLineIndex >= 0) {
-                "${locationName.getAddressLine(0)}\n${getString(R.string.lat_long_snippet, latLng.latitude, latLng.longitude)}"
+                "${locationName.getAddressLine(0)}\n${
+                    getString(
+                        R.string.lat_long_snippet,
+                        latLng.latitude,
+                        latLng.longitude
+                    )
+                }"
             } else {
                 getString(R.string.lat_long_snippet, latLng.latitude, latLng.longitude)
             }
@@ -122,7 +118,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .snippet(snippet)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
-            openDialogToConfirm()
         }
     }
 
@@ -132,6 +127,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setMapStyle(map)
         setMapLongClick(map)
         enableMyLocation()
+        binding.btnSave.isEnabled = true
     }
 
     @SuppressLint("MissingPermission")
