@@ -3,11 +3,15 @@ package com.udacity.project4.locationreminders.reminderslist
 import android.os.Bundle
 import android.view.*
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentRemindersBinding
+import com.udacity.project4.ui.authentication.AuthenticationActivity
+import com.udacity.project4.ui.authentication.AuthVM
+import com.udacity.project4.ui.authentication.Status
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.setTitle
 import com.udacity.project4.utils.setup
@@ -16,6 +20,8 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class ReminderListFragment : BaseFragment() {
     //use Koin to retrieve the ViewModel instance
     override val _viewModel: RemindersListViewModel by viewModel()
+    private val authVM: AuthVM by viewModel()
+
     private lateinit var binding: FragmentRemindersBinding
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -33,6 +39,17 @@ class ReminderListFragment : BaseFragment() {
         setTitle(getString(R.string.app_name))
 
         binding.refreshLayout.setOnRefreshListener { _viewModel.loadReminders() }
+
+        _viewModel.showLoading.observe(viewLifecycleOwner, Observer {
+            binding.refreshLayout.isRefreshing = it
+        })
+
+        authVM.status.observe(viewLifecycleOwner, Observer {
+            if (it == Status.UNAUTHENTICATED) {
+                AuthenticationActivity.launch(requireContext())
+                requireActivity().finish()
+            }
+        })
 
         return binding.root
     }

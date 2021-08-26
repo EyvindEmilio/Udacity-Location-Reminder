@@ -1,4 +1,4 @@
-package com.udacity.project4.ui.authentication
+package com.udacity.project4.utils
 
 import androidx.lifecycle.LiveData
 import com.google.firebase.auth.FirebaseAuth

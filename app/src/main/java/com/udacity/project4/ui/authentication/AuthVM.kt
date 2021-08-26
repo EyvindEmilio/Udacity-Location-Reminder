@@ -4,9 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
+import com.udacity.project4.utils.FirebaseUserLiveData
 
 enum class Status { NONE, ATTEMPT_LOGIN, AUTHENTICATED, UNAUTHENTICATED }
-class LoginVM : ViewModel() {
+class AuthVM : ViewModel() {
     private val _status = MediatorLiveData<Status>().apply {
         addSource(FirebaseUserLiveData().map { user ->
             if (user != null) Status.AUTHENTICATED else Status.UNAUTHENTICATED
