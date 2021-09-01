@@ -37,6 +37,9 @@
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
     <string name="discard">Discard</string>
+    <string name="update">Update</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>

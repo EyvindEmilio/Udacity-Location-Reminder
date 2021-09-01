@@ -22,6 +22,7 @@ import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.utils.isLocationPermissionGranted
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -132,7 +133,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
-        if (isPermissionGranted()) {
+        if (requireContext().isLocationPermissionGranted()) {
             map.isMyLocationEnabled = true
         } else {
             requestPermissions(
@@ -172,12 +173,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 ).show()
             }
         }
-    }
-
-    private fun isPermissionGranted(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun setMapStyle(map: GoogleMap) {
