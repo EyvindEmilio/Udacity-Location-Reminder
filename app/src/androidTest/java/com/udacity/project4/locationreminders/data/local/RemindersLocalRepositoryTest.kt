@@ -30,7 +30,6 @@ class RemindersLocalRepositoryTest {
     private val reminders = mutableListOf(reminder1, reminder2, reminder3)
     lateinit var database: RemindersDatabase
 
-    // Class under test
     private lateinit var reminderRepository: RemindersLocalRepository
 
     @get:Rule

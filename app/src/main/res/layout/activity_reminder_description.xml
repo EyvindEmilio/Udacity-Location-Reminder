@@ -28,6 +28,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:enabled="false"
                 android:text="@{reminderDataItem.title}" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -42,8 +43,10 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:enabled="false"
                 android:lines="4"
-                android:text="@{reminderDataItem.description}" />
+                android:text="@{reminderDataItem.description}"
+                tools:text="TEST" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -57,6 +60,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:enabled="false"
                 android:text="@{reminderDataItem.location}" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -72,6 +76,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:enabled="false"
                 android:text="@{reminderDataItem.latitude.toString()}" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -87,6 +92,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:enabled="false"
                 android:text="@{reminderDataItem.longitude.toString()}" />
         </com.google.android.material.textfield.TextInputLayout>
 

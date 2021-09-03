@@ -22,6 +22,7 @@ import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.isLocationPermissionGranted
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class SaveReminderFragment : BaseFragment() {
@@ -67,9 +68,8 @@ class SaveReminderFragment : BaseFragment() {
             val reminder = ReminderDataItem(
                 title, description, location, latitude, longitude
             )
-            if (_viewModel.validateEnteredData(reminder)) {
-                _viewModel.saveReminder(reminder)
-            }
+
+            _viewModel.validateAndSaveReminder(reminder)
 
             if (requireContext().isLocationPermissionGranted()) {
                 buildGeofence(reminder)
@@ -109,17 +109,13 @@ class SaveReminderFragment : BaseFragment() {
             .build()
 
         geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-            addOnCompleteListener {
+            addOnSuccessListener {
                 geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
                     addOnSuccessListener {
-                        Toast.makeText(
-                            requireContext(), R.string.geofence_entered, Toast.LENGTH_LONG
-                        ).show()
+                        Timber.d("Geofence Added")
                     }
                     addOnFailureListener {
-                        Toast.makeText(
-                            requireContext(), R.string.geofences_not_added, Toast.LENGTH_LONG
-                        ).show()
+                        Timber.d("Failed adding geofence Geofence")
                     }
                 }
             }
