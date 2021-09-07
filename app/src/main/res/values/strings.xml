@@ -40,6 +40,9 @@
     <string name="update">Update</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
+    <string name="location">Location</string>
+    <string name="location_message">We need to know your current location to show locations near to you</string>
+    <string name="allow">Allow</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>

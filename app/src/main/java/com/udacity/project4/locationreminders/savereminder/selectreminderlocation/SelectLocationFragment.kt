@@ -5,10 +5,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.location.Geocoder
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.location.LocationServices
@@ -27,7 +27,7 @@ import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
-class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
+class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnPoiClickListener {
 
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
@@ -41,7 +41,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
 
@@ -93,48 +93,34 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         else -> super.onOptionsItemSelected(item)
     }
 
-    private fun setMapLongClick(map: GoogleMap) {
-        map.setOnMapClickListener { latLng ->
-            val locationName =
-                Geocoder(requireContext()).getFromLocation(latLng.latitude, latLng.longitude, 1)
-                    .firstOrNull()
-            Timber.d("LocationSelected = ${locationName.toString()}")
-            val snippet = if (locationName != null && locationName.maxAddressLineIndex >= 0) {
-                "${locationName.getAddressLine(0)}\n${
-                    getString(
-                        R.string.lat_long_snippet,
-                        latLng.latitude,
-                        latLng.longitude
-                    )
-                }"
-            } else {
-                getString(R.string.lat_long_snippet, latLng.latitude, latLng.longitude)
-            }
-
-            marker?.remove()
-            marker = map.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title(getString(R.string.dropped_pin))
-                    .snippet(snippet)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-            )
-        }
-    }
-
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
 
         setMapStyle(map)
-        setMapLongClick(map)
         enableMyLocation()
+        map.setOnPoiClickListener(this)
         binding.btnSave.isEnabled = true
     }
 
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
+        Timber.d("enableMyLocation()")
         if (requireContext().isLocationPermissionGranted()) {
             map.isMyLocationEnabled = true
+            zoomToUserLocation()
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.location)
+                .setMessage(R.string.location_message)
+                .setPositiveButton(R.string.allow) { _, _ ->
+                    requestPermissions(
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        REQUEST_LOCATION_PERMISSION
+                    )
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         } else {
             requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -145,14 +131,15 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun zoomToUserLocation() {
+        Timber.d("zoomToUserLocation()")
         LocationServices.getFusedLocationProviderClient(requireActivity())
             .lastLocation.addOnSuccessListener { location ->
+                Timber.d("getFusedLocationProviderClient()")
                 location?.let {
                     val latLong = LatLng(it.latitude, it.longitude)
                     map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLong, 16f))
                 }
             }
-
     }
 
     override fun onRequestPermissionsResult(
@@ -186,6 +173,21 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             }
         } catch (e: Resources.NotFoundException) {
             Timber.d("MapStyle resource not found")
+        }
+    }
+
+    override fun onPoiClick(p0: PointOfInterest?) {
+        Timber.d("onPoiClick() p0.name=${p0?.name}")
+
+        p0?.let {
+            marker?.remove()
+            marker = map.addMarker(
+                MarkerOptions()
+                    .position(it.latLng)
+                    .title(getString(R.string.dropped_pin))
+                    .snippet(it.name)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+            )
         }
     }
 
