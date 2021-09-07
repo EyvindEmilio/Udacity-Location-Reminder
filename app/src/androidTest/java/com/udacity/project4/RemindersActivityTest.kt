@@ -79,7 +79,7 @@ class RemindersActivityTest :
     }
 
     @Test
-    fun addReminder_withCorrectValues() {
+    fun addReminder_withCorrectValuesWithoutLocation() {
         runBlocking { repository.deleteAllReminders() }
         val scenario = ActivityScenario.launch(RemindersActivity::class.java)
         onView(withId(R.id.addReminderFAB)).check(matches(isDisplayed())).perform(click())
@@ -87,14 +87,13 @@ class RemindersActivityTest :
         onView(withId(R.id.reminderDescription)).check(matches(isDisplayed()))
             .perform(typeText("Desc1"))
         closeSoftKeyboard()
-        onView(withId(R.id.selectLocation)).check(matches(isDisplayed())).perform(click())
 
-        onView(withId(R.id.map)).check(matches(isDisplayed())).perform(click())
-        onView(withId(R.id.btnSave)).check(matches(isDisplayed())).perform(click())
         onView(withId(R.id.saveReminder)).check(matches(isDisplayed())).perform(click())
 
         onView(withText("Title1")).check(matches(isDisplayed()))
         onView(withText("Desc1")).check(matches(isDisplayed()))
+        onView(withId(com.google.android.material.R.id.snackbar_text))
+            .check(matches(withText(R.string.select_location)))
     }
 
     @Test

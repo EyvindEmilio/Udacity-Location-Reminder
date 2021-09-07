@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -115,7 +114,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnP
                 .setMessage(R.string.location_message)
                 .setPositiveButton(R.string.allow) { _, _ ->
                     requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ),
                         REQUEST_LOCATION_PERMISSION
                     )
                 }

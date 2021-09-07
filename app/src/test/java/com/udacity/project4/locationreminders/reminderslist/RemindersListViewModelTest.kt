@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.reminderslist
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.getOrAwaitValue
@@ -22,6 +23,9 @@ class RemindersListViewModelTest {
 
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
 
     private lateinit var fakeDataSource: FakeDataSource
     private lateinit var remindersListViewModel: RemindersListViewModel
@@ -55,7 +59,12 @@ class RemindersListViewModelTest {
     fun loadReminders_showLoader() = runBlockingTest {
         val reminder = ReminderDTO("Title1", "Des1", "Loc1", 0.01, 0.01)
         fakeDataSource.saveReminder(reminder)
+
+        mainCoroutineRule.pauseDispatcher()
         remindersListViewModel.loadReminders()
+        assertThat(remindersListViewModel.showLoading.getOrAwaitValue(), `is`(true))
+
+        mainCoroutineRule.resumeDispatcher()
         assertThat(remindersListViewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
 
