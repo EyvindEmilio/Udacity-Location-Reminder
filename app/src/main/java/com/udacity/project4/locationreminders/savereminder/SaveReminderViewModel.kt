@@ -20,6 +20,7 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     val selectedPOI = MutableLiveData<PointOfInterest>()
     val latitude = MutableLiveData<Double>()
     val longitude = MutableLiveData<Double>()
+    var reminderDataItemValidated: ReminderDataItem? = null
 
     /**
      * Clear the live data objects to start fresh next time the view model gets called
@@ -77,6 +78,7 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
             showSnackBarInt.value = R.string.err_select_location
             return false
         }
+        reminderDataItemValidated = reminderData
         return true
     }
 }

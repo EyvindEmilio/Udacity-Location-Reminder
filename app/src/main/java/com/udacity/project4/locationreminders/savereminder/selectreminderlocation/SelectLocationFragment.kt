@@ -25,8 +25,9 @@ import com.udacity.project4.utils.isLocationPermissionGranted
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import timber.log.Timber
+import java.util.*
 
-class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnPoiClickListener {
+class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
@@ -97,7 +98,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnP
 
         setMapStyle(map)
         enableMyLocation()
-        map.setOnPoiClickListener(this)
+        setMapLongClick(map)
         binding.btnSave.isEnabled = true
     }
 
@@ -108,16 +109,12 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnP
             map.isMyLocationEnabled = true
             zoomToUserLocation()
         } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-
             AlertDialog.Builder(requireContext())
                 .setTitle(R.string.location)
                 .setMessage(R.string.location_message)
                 .setPositiveButton(R.string.allow) { _, _ ->
                     requestPermissions(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                        ),
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                         REQUEST_LOCATION_PERMISSION
                     )
                 }
@@ -178,16 +175,23 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnP
         }
     }
 
-    override fun onPoiClick(p0: PointOfInterest?) {
-        Timber.d("onPoiClick() p0.name=${p0?.name}")
-
-        p0?.let {
+    private fun setMapLongClick(map: GoogleMap) {
+        Timber.d("setMapLongClick()")
+        map.setOnMapLongClickListener { latLng ->
+            Timber.d("setMapLongClick() latLng=$latLng")
+            // A Snippet is Additional text that's displayed below the title.
+            val snippet = String.format(
+                Locale.getDefault(),
+                "Lat: %1$.5f, Long: %2$.5f",
+                latLng.latitude,
+                latLng.longitude
+            )
             marker?.remove()
             marker = map.addMarker(
                 MarkerOptions()
-                    .position(it.latLng)
+                    .position(latLng)
                     .title(getString(R.string.dropped_pin))
-                    .snippet(it.name)
+                    .snippet(snippet)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
         }

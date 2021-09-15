@@ -3,11 +3,14 @@ package com.udacity.project4.utils
 import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.annotation.TargetApi
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.os.Build
 import android.util.Log
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -73,5 +76,13 @@ fun View.fadeOut() {
 fun Context.isLocationPermissionGranted(): Boolean {
     return ContextCompat.checkSelfPermission(
         this, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+}
+
+
+@TargetApi(Build.VERSION_CODES.Q)
+fun Context.isBackgroundPermissionGranted(): Boolean {
+    return ContextCompat.checkSelfPermission(
+        this, Manifest.permission.ACCESS_BACKGROUND_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
 }
