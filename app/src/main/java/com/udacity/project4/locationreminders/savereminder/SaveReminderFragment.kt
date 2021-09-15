@@ -75,8 +75,9 @@ class SaveReminderFragment : BaseFragment() {
                 title, description, location, latitude, longitude
             )
 
-            _viewModel.validateEnteredData(reminder)
-            checkDeviceLocationSettingsAndStartGeofence(reminder)
+            if (_viewModel.validateEnteredData(reminder)) {
+                checkDeviceLocationSettingsAndStartGeofence(reminder)
+            }
         }
     }
 

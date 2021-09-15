@@ -85,6 +85,13 @@ class RemindersLocalRepositoryTest {
     }
 
     @Test
+    fun getReminderNotFoundTest() = runBlockingTest {
+        val reminderSaved = reminderRepository.getReminder("Random Reminder Id")
+        assert(reminderSaved is Result.Error)
+        assertThat((reminderSaved as Result.Error).message, `is`("Reminder not found!"))
+    }
+
+    @Test
     fun deleteAllReminders() = runBlockingTest {
         reminders.forEach { reminderRepository.saveReminder(it) }
         var remindersSaved = reminderRepository.getReminders()
