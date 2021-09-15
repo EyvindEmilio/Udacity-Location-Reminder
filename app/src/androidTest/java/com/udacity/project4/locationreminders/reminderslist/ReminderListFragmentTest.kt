@@ -1,14 +1,13 @@
 package com.udacity.project4.locationreminders.reminderslist
 
-import android.content.Context
 import android.os.Bundle
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
@@ -20,21 +19,24 @@ import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
 import com.udacity.project4.ui.authentication.AuthVM
+import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.monitorFragment
+import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.Matchers.not
-import org.junit.Assert.*
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
-import org.koin.dsl.module
-import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 
@@ -46,6 +48,7 @@ import org.mockito.Mockito.verify
 class ReminderListFragmentTest {
 
     private lateinit var repository: ReminderDataSource
+    private val dataBindingIdlingResource = DataBindingIdlingResource()
 
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
@@ -81,9 +84,24 @@ class ReminderListFragmentTest {
         }
     }
 
+    @Before
+    fun registerIdlingResource() {
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().register(dataBindingIdlingResource)
+    }
+
+    @After
+    fun unregisterIdlingResource() {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
+    }
+
     @Test
     fun displayEmptyData() = runBlockingTest {
-        val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        val scenario =
+            launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(scenario)
+
         val navController = mock(NavController::class.java)
         scenario.onFragment {
             Navigation.setViewNavController(it.view!!, navController)
@@ -98,7 +116,10 @@ class ReminderListFragmentTest {
         runBlocking { repository.saveReminder(reminder) }
 
         //launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
-        val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        val scenario =
+            launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(scenario)
+
         val navController = mock(NavController::class.java)
         scenario.onFragment {
             Navigation.setViewNavController(it.view!!, navController)
@@ -112,7 +133,10 @@ class ReminderListFragmentTest {
 
     @Test
     fun tapAdd_toNavigate_toCreateReminder() = runBlockingTest {
-        val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        val scenario =
+            launchFragmentInContainer<ReminderListFragment>(Bundle.EMPTY, R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(scenario)
+
         val navController = mock(NavController::class.java)
         scenario.onFragment {
             Navigation.setViewNavController(it.view!!, navController)
