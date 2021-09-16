@@ -2,15 +2,17 @@ package com.udacity.project4.locationreminders.savereminder
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
@@ -76,12 +78,12 @@ class SaveReminderFragment : BaseFragment() {
             )
 
             if (_viewModel.validateEnteredData(reminder)) {
-                checkDeviceLocationSettingsAndStartGeofence(reminder)
+                requestLocationPermissionsAndStartGeofencing()
             }
         }
     }
 
-    private fun checkDeviceLocationSettingsAndStartGeofence(reminder: ReminderDataItem) {
+    private fun checkDeviceLocationSettingsAndStartGeofence() {
         val locationRequest = LocationRequest.create().apply {
             priority = LocationRequest.PRIORITY_LOW_POWER
         }
@@ -92,37 +94,65 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException) {
                 try {
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                        REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null,
+                        0,
+                        0,
+                        0,
+                        null
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Timber.d("Error getting location settings resolution: ${sendEx.message}")
                 }
             } else {
                 Snackbar.make(
-                    binding.root, R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
+                    binding.root, R.string.location_required_error, Snackbar.LENGTH_LONG
                 ).setAction(android.R.string.ok) {
-                    checkDeviceLocationSettingsAndStartGeofence(reminder)
+                    checkDeviceLocationSettingsAndStartGeofence()
                 }.show()
             }
         }
-        locationSettingsResponseTask.addOnCompleteListener {
-            if (it.isSuccessful) {
-                requestLocationPermissionsAndStartGeofencing(reminder)
+
+        locationSettingsResponseTask.addOnCompleteListener { task ->
+            Timber.d("locationSettingsResponseTask.addOnCompleteListener ${task.isSuccessful}")
+            if (task.isSuccessful) {
+                _viewModel.reminderDataItemValidated?.let {
+                    _viewModel.saveReminder(it)
+                    buildGeofence(it)
+                }
             }
         }
     }
 
-    private fun requestLocationPermissionsAndStartGeofencing(reminder: ReminderDataItem) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Timber.d("onActivityResult() requestCode=$requestCode, resultCode=$resultCode")
+        if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
+            if (resultCode == Activity.RESULT_OK) {
+                _viewModel.reminderDataItemValidated?.let {
+                    _viewModel.saveReminder(it)
+                    buildGeofence(it)
+                }
+            } else {
+                Snackbar.make(
+                    binding.root, R.string.location_required_error, Snackbar.LENGTH_LONG
+                ).setAction(android.R.string.ok) {
+                    checkDeviceLocationSettingsAndStartGeofence()
+                }.show()
+            }
+        }
+    }
+
+    private fun requestLocationPermissionsAndStartGeofencing() {
         Timber.d("requestLocationPermissionsAndStartGeofencing()")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Timber.d("isLocationPermissionGranted = ${requireContext().isLocationPermissionGranted()}")
             Timber.d("isBackgroundPermissionGranted = ${requireContext().isBackgroundPermissionGranted()}")
             if (requireContext().isLocationPermissionGranted() && requireContext().isBackgroundPermissionGranted()) {
-                _viewModel.saveReminder(reminder)
-                buildGeofence(reminder)
+                checkDeviceLocationSettingsAndStartGeofence()
             } else {
                 Timber.d("Request location for android >= Q")
                 if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -152,8 +182,7 @@ class SaveReminderFragment : BaseFragment() {
             }
         } else {
             if (requireContext().isLocationPermissionGranted()) {
-                _viewModel.saveReminder(reminder)
-                buildGeofence(reminder)
+                checkDeviceLocationSettingsAndStartGeofence()
             } else {
                 Timber.d("Request location for android < Q")
                 requestPermissions(
@@ -174,16 +203,10 @@ class SaveReminderFragment : BaseFragment() {
         if (requestCode == REQUEST_CODE_LOCATION_PERMISSION) {
             if (requireContext().isLocationPermissionGranted()) {
                 Timber.d("Permission granted")
-                _viewModel.reminderDataItemValidated?.let {
-                    _viewModel.saveReminder(it)
-                    buildGeofence(it)
-                }
+                checkDeviceLocationSettingsAndStartGeofence()
             } else {
                 Timber.d("Permission denied")
-                Toast.makeText(
-                    requireContext(),
-                    R.string.location_required_error, Toast.LENGTH_SHORT
-                ).show()
+                showSnackBarToOpenAppSettings()
             }
         } else if (requestCode == REQUEST_CODE_LOCATION_AND_BACKGROUND_PERMISSION) {
             Timber.d("isLocationPermissionGranted = ${requireContext().isLocationPermissionGranted()}")
@@ -193,18 +216,25 @@ class SaveReminderFragment : BaseFragment() {
                 requireContext().isBackgroundPermissionGranted()
             ) {
                 Timber.d("Permission granted for android Q+")
-                _viewModel.reminderDataItemValidated?.let {
-                    _viewModel.saveReminder(it)
-                    buildGeofence(it)
-                }
+                checkDeviceLocationSettingsAndStartGeofence()
             } else {
                 Timber.d("Permission denied for android Q+")
-                Toast.makeText(
-                    requireContext(),
-                    R.string.location_required_error, Toast.LENGTH_SHORT
-                ).show()
+                showSnackBarToOpenAppSettings()
             }
         }
+    }
+
+    private fun showSnackBarToOpenAppSettings() {
+        Snackbar.make(
+            binding.root, R.string.permission_denied_explanation, Snackbar.LENGTH_LONG
+        ).setAction(android.R.string.ok) {
+            startActivity(Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", requireActivity().packageName, null)
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }.show()
     }
 
     private val geofencePendingIntent: PendingIntent by lazy {
@@ -233,16 +263,12 @@ class SaveReminderFragment : BaseFragment() {
             .addGeofence(geofence)
             .build()
 
-        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
+        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
             addOnSuccessListener {
-                geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-                    addOnSuccessListener {
-                        Timber.d("Geofence Added")
-                    }
-                    addOnFailureListener {
-                        Timber.d("Failed adding geofence Geofence")
-                    }
-                }
+                Timber.d("Geofence Added")
+            }
+            addOnFailureListener {
+                Timber.d("Failed adding geofence Geofence")
             }
         }
 
