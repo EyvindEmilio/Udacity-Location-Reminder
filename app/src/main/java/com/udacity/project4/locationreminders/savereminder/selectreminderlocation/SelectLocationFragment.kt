@@ -27,7 +27,7 @@ import org.koin.android.ext.android.inject
 import timber.log.Timber
 import java.util.*
 
-class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
+class SelectLocationFragment : BaseFragment(), OnMapReadyCallback, GoogleMap.OnPoiClickListener {
 
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
@@ -99,6 +99,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setMapStyle(map)
         enableMyLocation()
         setMapLongClick(map)
+        map.setOnPoiClickListener(this)
+
         binding.btnSave.isEnabled = true
     }
 
@@ -172,6 +174,21 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             }
         } catch (e: Resources.NotFoundException) {
             Timber.d("MapStyle resource not found")
+        }
+    }
+
+    override fun onPoiClick(p0: PointOfInterest?) {
+        Timber.d("onPoiClick() p0.name=${p0?.name}")
+
+        p0?.let {
+            marker?.remove()
+            marker = map.addMarker(
+                MarkerOptions()
+                    .position(it.latLng)
+                    .title(getString(R.string.dropped_pin))
+                    .snippet(it.name)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+            )
         }
     }
 
